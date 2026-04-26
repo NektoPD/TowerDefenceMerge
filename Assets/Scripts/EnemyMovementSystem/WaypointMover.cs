@@ -32,6 +32,7 @@ namespace EnemyMovementSystem
 
         public void OnReachedEnd()
         {
+            StopCurrentMovement();
             MoverRemoved?.Invoke(this);
         }
 

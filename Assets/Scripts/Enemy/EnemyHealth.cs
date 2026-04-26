@@ -8,6 +8,8 @@ namespace Enemy
         [SerializeField, Min(1f)] private float _maxHp = 10f;
 
         public bool IsDead => _health.Current <= 0f;
+        public event System.Action<EnemyHealth> Died;
+        private bool _diedInvoked;
 
         public event System.Action<float, float> Changed
         {
@@ -18,6 +20,7 @@ namespace Enemy
         private void OnEnable()
         {
             // Ensures pooled enemies always come back alive.
+            _diedInvoked = false;
             if (_health.Current <= 0f || _health.Max != _maxHp)
                 ResetToFull();
         }
@@ -30,6 +33,11 @@ namespace Enemy
         public void TakeDamage(float amount)
         {
             _health.TakeDamage(amount);
+            if (!_diedInvoked && IsDead)
+            {
+                _diedInvoked = true;
+                Died?.Invoke(this);
+            }
         }
     }
 }

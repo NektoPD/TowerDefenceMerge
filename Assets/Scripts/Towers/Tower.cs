@@ -13,7 +13,7 @@ namespace Towers
 
         private Projectiles.ProjectilePool _projectilePool;
 
-        private readonly List<Enemy.EnemyHealth> _targets = new();
+        private readonly List<Enemy.EnemyTarget> _targets = new();
         private float _cooldownTimer;
         private CircleCollider2D _rangeTrigger;
 
@@ -57,35 +57,71 @@ namespace Towers
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (((1 << other.gameObject.layer) & _enemyLayer.value) == 0) return;
-            if (!other.TryGetComponent(out Enemy.EnemyHealth enemyHealth)) return;
-            if (!_targets.Contains(enemyHealth)) _targets.Add(enemyHealth);
+            Debug.Log($"[Tower] OnTriggerEnter2D: self={name} other={other.name} layer={LayerMask.LayerToName(other.gameObject.layer)}", this);
+
+            if (((1 << other.gameObject.layer) & _enemyLayer.value) == 0)
+            {
+                Debug.Log($"[Tower] Ignored (layer not in enemy mask). enemyMask={_enemyLayer.value}", this);
+                return;
+            }
+
+            var hitbox = other.GetComponent<Enemy.EnemyHitbox>();
+            if (hitbox == null)
+            {
+                Debug.Log("[Tower] Ignored (missing EnemyHitbox on collider object).", this);
+                return;
+            }
+
+            var target = hitbox.Target;
+            if (target == null)
+            {
+                Debug.Log("[Tower] Ignored (EnemyHitbox.Target is null).", this);
+                return;
+            }
+
+            if (target.Health == null)
+            {
+                Debug.Log("[Tower] Ignored (EnemyTarget.Health is null).", this);
+                return;
+            }
+
+            if (_targets.Contains(target))
+            {
+                Debug.Log("[Tower] Ignored (target already tracked).", this);
+                return;
+            }
+
+            _targets.Add(target);
+            Debug.Log($"[Tower] Target added. trackedCount={_targets.Count} target={target.name}", this);
         }
 
         private void OnTriggerExit2D(Collider2D other)
         {
-            if (!other.TryGetComponent(out Enemy.EnemyHealth enemyHealth)) return;
-            _targets.Remove(enemyHealth);
+            var hitbox = other.GetComponent<Enemy.EnemyHitbox>();
+            if (hitbox == null) return;
+            var target = hitbox.Target;
+            if (target == null) return;
+            _targets.Remove(target);
         }
 
-        private Enemy.EnemyHealth GetBestTarget()
+        private Enemy.EnemyTarget GetBestTarget()
         {
             for (int i = _targets.Count - 1; i >= 0; i--)
             {
-                if (_targets[i] == null || !_targets[i].isActiveAndEnabled || _targets[i].IsDead)
+                if (_targets[i] == null || !_targets[i].isActiveAndEnabled || _targets[i].Health == null || _targets[i].Health.IsDead)
                     _targets.RemoveAt(i);
             }
 
             if (_targets.Count == 0) return null;
 
-            Enemy.EnemyHealth best = null;
+            Enemy.EnemyTarget best = null;
             float bestDist = float.PositiveInfinity;
             var from = (Vector2)transform.position;
 
             foreach (var t in _targets)
             {
                 if (t == null) continue;
-                float d = Vector2.SqrMagnitude((Vector2)t.transform.position - from);
+                float d = Vector2.SqrMagnitude((Vector2)t.AimPoint.position - from);
                 if (d < bestDist)
                 {
                     bestDist = d;
@@ -96,19 +132,64 @@ namespace Towers
             return best;
         }
 
-        private void FireAt(Enemy.EnemyHealth target)
+        private void FireAt(Enemy.EnemyTarget target)
         {
-            if (_stats.ProjectilePrefab == null) return;
+            Debug.Log($"[Tower] FireAt: self={name} target={(target != null ? target.name : "null")}", this);
+
+            if (_stats == null)
+            {
+                Debug.Log("[Tower] FireAt aborted: _stats is null.", this);
+                return;
+            }
+
+            if (_projectilePool == null)
+            {
+                Debug.Log("[Tower] FireAt aborted: _projectilePool is null (Zenject binding/injection missing?).", this);
+                return;
+            }
+
+            if (target == null)
+            {
+                Debug.Log("[Tower] FireAt aborted: target is null.", this);
+                return;
+            }
+
+            if (target.Health == null)
+            {
+                Debug.Log("[Tower] FireAt aborted: target.Health is null.", this);
+                return;
+            }
+
+            if (_stats.ProjectilePrefab == null)
+            {
+                Debug.Log("[Tower] FireAt aborted: TowerStats.ProjectilePrefab is null.", this);
+                return;
+            }
+
+            if (_shootPoint == null)
+            {
+                Debug.Log("[Tower] FireAt: _shootPoint is null, using tower transform.", this);
+                _shootPoint = transform;
+            }
 
             var projectile = _projectilePool.Get(_stats.ProjectilePrefab);
+            if (projectile == null)
+            {
+                Debug.Log("[Tower] FireAt aborted: pool returned null projectile.", this);
+                return;
+            }
+
+            Debug.Log($"[Tower] Spawned projectile={projectile.name} prefab={_stats.ProjectilePrefab.name} dmg={_stats.Damage} projStats={( _stats.ProjectileStats != null ? _stats.ProjectileStats.name : "null")}", this);
             projectile.transform.position = _shootPoint.position;
             projectile.gameObject.SetActive(true);
+            Debug.Log($"[Tower] Launch projectile from={_shootPoint.position} toAim={target.AimPoint.position}", this);
             projectile.Launch(
-                target,
+                target.Health,
                 _stats.Damage,
                 _stats.ProjectileStats,
                 _projectilePool
             );
+            Debug.Log("[Tower] FireAt done.", this);
         }
 
         private void ApplyStatsToTrigger()
