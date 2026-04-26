@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using EnemyMovementSystem;
 using UnityEngine;
 
 namespace Waves
@@ -11,7 +10,7 @@ namespace Waves
         [Serializable]
         public class SpawnGroup
         {
-            public WaypointHolder line;
+            [Min(0)] public int lineIndex = 0;
             [Min(0)] public int count = 10;
             [Min(0f)] public float spawnInterval = 0.4f;
         }

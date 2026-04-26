@@ -10,6 +10,7 @@ namespace Waves
         [SerializeField] private EnemySpawner _spawner;
         [SerializeField] private WaveConfig _config;
         [SerializeField] private bool _autoStart = true;
+        [SerializeField] private WaypointHolder[] _lines;
 
         private int _aliveInWave;
         private bool _waveSpawningDone;
@@ -43,7 +44,7 @@ namespace Waves
                 {
                     foreach (var group in wave.groups)
                     {
-                        if (group == null || group.line == null || group.count <= 0) continue;
+                        if (group == null || group.count <= 0) continue;
                         yield return StartCoroutine(SpawnGroup(group));
                     }
                 }
@@ -60,12 +61,17 @@ namespace Waves
 
         private IEnumerator SpawnGroup(WaveConfig.SpawnGroup group)
         {
+            if (_lines == null || _lines.Length == 0) yield break;
+            if (group.lineIndex < 0 || group.lineIndex >= _lines.Length) yield break;
+            var line = _lines[group.lineIndex];
+            if (line == null) yield break;
+
             for (int i = 0; i < group.count; i++)
             {
                 var mover = _spawner.GetFromPool();
                 _aliveInWave++;
                 mover.MoverRemoved += OnMoverRemoved;
-                group.line.SetNewMover(mover);
+                line.SetNewMover(mover);
 
                 if (group.spawnInterval > 0f)
                     yield return new WaitForSeconds(group.spawnInterval);

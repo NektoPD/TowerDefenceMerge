@@ -6,8 +6,9 @@ namespace Enemy
     {
         [SerializeField] private HealthModal _health = new();
         [SerializeField, Min(1f)] private float _maxHp = 10f;
+        [SerializeField, Min(0f)] private float _deathThreshold = 0.01f;
 
-        public bool IsDead => _health.Current <= 0f;
+        public bool IsDead => _health.Current <= _deathThreshold;
         public event System.Action<EnemyHealth> Died;
         private bool _diedInvoked;
 
@@ -21,7 +22,7 @@ namespace Enemy
         {
             // Ensures pooled enemies always come back alive.
             _diedInvoked = false;
-            if (_health.Current <= 0f || _health.Max != _maxHp)
+            if (_health.Current <= _deathThreshold || _health.Max != _maxHp)
                 ResetToFull();
         }
 
