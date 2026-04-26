@@ -7,14 +7,15 @@ namespace GridSystem
     {
         [SerializeField] private Towers.Tower _towerPrefab;
         [SerializeField] private KeyCode _placeKey = KeyCode.Mouse0;
+        [SerializeField] private KeyCode _cancelKey = KeyCode.Mouse1;
 
         [Header("Spots")]
         [SerializeField] private Camera _camera;
         [SerializeField, Min(0.01f)] private float _snapRadius = 0.6f;
+        [SerializeField] private TowerPlacementSpot[] _spots;
 
         [Header("Build mode")]
-        [SerializeField] private bool _buildMode = true;
-        [SerializeField] private KeyCode _toggleBuildModeKey = KeyCode.B;
+        [SerializeField] private bool _buildMode = false;
 
         [Header("Preview")]
         [SerializeField] private bool _showPreview = true;
@@ -26,10 +27,9 @@ namespace GridSystem
         private DiContainer _container;
         private GameObject _previewInstance;
         private SpriteRenderer[] _previewRenderers;
+        private RangeCirclePreview _rangePreview;
         private TowerPlacementSpot _currentSpot;
         private TowerPlacementSpot _previousSpot;
-        private TowerPlacementSpot[] _spots;
-
         [Inject]
         public void Construct(DiContainer container)
         {
@@ -39,12 +39,6 @@ namespace GridSystem
         private void Awake()
         {
             if (_camera == null) _camera = Camera.main;
-            RefreshSpots();
-        }
-
-        public void RefreshSpots()
-        {
-            _spots = FindObjectsByType<TowerPlacementSpot>(FindObjectsSortMode.None);
         }
 
         private void OnDisable()
@@ -59,22 +53,23 @@ namespace GridSystem
 
         private void Update()
         {
-            if (_towerPrefab == null || _container == null) return;
+            if (_container == null) return;
             if (_camera == null) return;
 
-            if (Input.GetKeyDown(_toggleBuildModeKey))
+            if (_buildMode && Input.GetKeyDown(_cancelKey))
             {
-                _buildMode = !_buildMode;
-                if (!_buildMode)
-                {
-                    SetPreviewActive(false);
-                    if (_previousSpot != null) _previousSpot.SetHovered(false);
-                    _previousSpot = null;
-                }
+                CancelBuild();
+                return;
             }
 
             if (!_buildMode)
                 return;
+
+            if (_towerPrefab == null)
+            {
+                SetPreviewActive(false);
+                return;
+            }
 
             UpdateCurrentSpotAndHighlight();
 
@@ -83,6 +78,22 @@ namespace GridSystem
             if (!_currentSpot.CanPlace) return;
 
             _currentSpot.TryPlace(_towerPrefab, _container, out _);
+        }
+
+        public void BeginBuild(Towers.Tower towerPrefab)
+        {
+            _towerPrefab = towerPrefab;
+            _buildMode = _towerPrefab != null;
+        }
+
+        public void CancelBuild()
+        {
+            _buildMode = false;
+            _towerPrefab = null;
+            SetPreviewActive(false);
+            if (_previousSpot != null) _previousSpot.SetHovered(false);
+            _previousSpot = null;
+            _currentSpot = null;
         }
 
         private void UpdateCurrentSpotAndHighlight()
@@ -111,7 +122,6 @@ namespace GridSystem
 
         private TowerPlacementSpot FindNearestSpot(Vector2 world)
         {
-            if (_spots == null || _spots.Length == 0) RefreshSpots();
             if (_spots == null || _spots.Length == 0) return null;
 
             TowerPlacementSpot best = null;
@@ -154,6 +164,9 @@ namespace GridSystem
                     if (r != null) r.color = col;
                 }
             }
+
+            if (_rangePreview != null)
+                _rangePreview.SetColor(col);
         }
 
         private void CreatePreview()
@@ -168,6 +181,24 @@ namespace GridSystem
                 col.enabled = false;
 
             _previewRenderers = _previewInstance.GetComponentsInChildren<SpriteRenderer>(true);
+
+            var tower = _previewInstance.GetComponent<Towers.Tower>();
+            if (tower != null)
+            {
+                var circleObj = new GameObject("RangePreview");
+                circleObj.transform.SetParent(_previewInstance.transform, false);
+                circleObj.transform.localPosition = Vector3.zero;
+
+                var lr = circleObj.AddComponent<LineRenderer>();
+                lr.widthMultiplier = 0.03f;
+                lr.numCapVertices = 2;
+                lr.numCornerVertices = 2;
+                lr.material = new Material(Shader.Find("Sprites/Default"));
+                lr.sortingOrder = 9999;
+
+                _rangePreview = circleObj.AddComponent<RangeCirclePreview>();
+                _rangePreview.SetRadius(tower.Range);
+            }
         }
 
         private void SetPreviewActive(bool active)

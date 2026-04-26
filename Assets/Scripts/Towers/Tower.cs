@@ -13,6 +13,8 @@ namespace Towers
 
         private Projectiles.ProjectilePool _projectilePool;
 
+        public float Range => _stats != null ? _stats.Range : 0f;
+
         private readonly List<Enemy.EnemyTarget> _targets = new();
         private float _cooldownTimer;
         private CircleCollider2D _rangeTrigger;
