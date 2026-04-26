@@ -31,6 +31,7 @@ namespace Enemy
             {
                 var mover = _waypointMoversInPool.Dequeue();
                 mover.gameObject.SetActive(true);
+                if (mover.TryGetComponent(out EnemyHealth health)) health.ResetToFull();
                 mover.MoverRemoved += ReturnToPool;
                 _activeMovers.Add(mover);
                 return mover;
@@ -38,6 +39,7 @@ namespace Enemy
 
             var newMover = Instantiate(_prefab, _parentPosition);
             newMover.gameObject.SetActive(true);
+            if (newMover.TryGetComponent(out EnemyHealth newHealth)) newHealth.ResetToFull();
             _activeMovers.Add(newMover);
             return newMover;
         }

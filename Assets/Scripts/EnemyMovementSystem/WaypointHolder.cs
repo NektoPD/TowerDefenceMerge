@@ -11,6 +11,8 @@ namespace EnemyMovementSystem
 
         private List<WaypointMover> _waypointMovers = new List<WaypointMover>();
 
+        public event System.Action<WaypointMover> MoverReachedEnd;
+
         public void SetNewMover(WaypointMover mover)
         {
             if (_waypointMovers.Contains(mover))
@@ -26,6 +28,7 @@ namespace EnemyMovementSystem
         {
             if (waypointMover.MovedIndex >= _waypoints.Count)
             {
+                MoverReachedEnd?.Invoke(waypointMover);
                 waypointMover.OnReachedEnd();
                 return;
             }
