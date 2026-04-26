@@ -34,13 +34,16 @@ namespace Enemy
                 if (mover.TryGetComponent(out EnemyHealth health)) health.ResetToFull();
                 mover.MoverRemoved += ReturnToPool;
                 _activeMovers.Add(mover);
+                Debug.Log("returning from pool");
                 return mover;
             }
 
             var newMover = Instantiate(_prefab, _parentPosition);
             newMover.gameObject.SetActive(true);
             if (newMover.TryGetComponent(out EnemyHealth newHealth)) newHealth.ResetToFull();
+            newMover.MoverRemoved += ReturnToPool;
             _activeMovers.Add(newMover);
+            Debug.Log("returning new");
             return newMover;
         }
 

@@ -12,6 +12,9 @@ namespace Enemy
         public event System.Action<EnemyHealth> Died;
         private bool _diedInvoked;
 
+        public float CurrentHp => _health.Current;
+        public float MaxHp => _health.Max;
+
         public event System.Action<float, float> Changed
         {
             add => _health.Changed += value;
@@ -33,7 +36,10 @@ namespace Enemy
 
         public void TakeDamage(float amount)
         {
+            var before = _health.Current;
             _health.TakeDamage(amount);
+            var after = _health.Current;
+            
             if (!_diedInvoked && IsDead)
             {
                 _diedInvoked = true;

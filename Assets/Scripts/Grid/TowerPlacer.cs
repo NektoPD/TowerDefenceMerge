@@ -20,6 +20,8 @@ namespace GridSystem
         [SerializeField] private bool _showPreview = true;
         [SerializeField] private Color _canPlaceColor = new Color(0.2f, 1f, 0.2f, 0.65f);
         [SerializeField] private Color _cannotPlaceColor = new Color(1f, 0.2f, 0.2f, 0.65f);
+        [SerializeField, Range(0f, 1f)] private float _followCursorAlpha = 0.5f;
+        [SerializeField, Range(0f, 1f)] private float _canBuildAlpha = 0.8f;
 
         private DiContainer _container;
         private GameObject _previewInstance;
@@ -90,10 +92,10 @@ namespace GridSystem
 
             if (_currentSpot == null)
             {
-                SetPreviewActive(false);
                 if (_previousSpot != null)
                     _previousSpot.SetHovered(false);
                 _previousSpot = null;
+                UpdatePreviewAt(mouseWorld, canPlace: false, snapped: false);
                 return;
             }
 
@@ -104,7 +106,7 @@ namespace GridSystem
             }
 
             _currentSpot.SetHovered(true);
-            UpdatePreview(_currentSpot);
+            UpdatePreviewAt(_currentSpot.SnapPosition, _currentSpot.CanPlace, snapped: true);
         }
 
         private TowerPlacementSpot FindNearestSpot(Vector2 world)
@@ -130,7 +132,7 @@ namespace GridSystem
             return best;
         }
 
-        private void UpdatePreview(TowerPlacementSpot spot)
+        private void UpdatePreviewAt(Vector3 worldPos, bool canPlace, bool snapped)
         {
             if (!_showPreview) return;
 
@@ -139,10 +141,12 @@ namespace GridSystem
 
             if (_previewInstance == null) return;
 
-            _previewInstance.transform.position = spot.SnapPosition;
+            _previewInstance.transform.position = worldPos;
             SetPreviewActive(true);
 
-            var col = spot.CanPlace ? _canPlaceColor : _cannotPlaceColor;
+            var baseCol = canPlace ? _canPlaceColor : _cannotPlaceColor;
+            var alpha = canPlace ? _canBuildAlpha : _followCursorAlpha;
+            var col = new Color(baseCol.r, baseCol.g, baseCol.b, alpha);
             if (_previewRenderers != null)
             {
                 foreach (var r in _previewRenderers)

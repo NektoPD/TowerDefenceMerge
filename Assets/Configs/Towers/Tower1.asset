@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   <Range>k__BackingField: 2
   <Cooldown>k__BackingField: 0.75
-  <Damage>k__BackingField: 10
+  <Damage>k__BackingField: 50
   <ProjectilePrefab>k__BackingField: {fileID: 8974992152551780334, guid: b5193e8755ce00244a4d04c783465c13, type: 3}
   <ProjectileStats>k__BackingField: {fileID: 11400000, guid: abe2058a05d3b0e46bcacbb260a93f82, type: 2}
