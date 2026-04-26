@@ -27,8 +27,6 @@ namespace Enemy
 
         public WaypointMover GetFromPool()
         {
-            Debug.Log("getting from pool");
-            
             if (_waypointMoversInPool.Any())
             {
                 var mover = _waypointMoversInPool.Dequeue();
