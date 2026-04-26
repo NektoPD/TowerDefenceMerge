@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Zenject;
 
 namespace Towers
 {
@@ -8,11 +9,19 @@ namespace Towers
         [SerializeField] private TowerStats _stats;
         [SerializeField] private Transform _shootPoint;
         [SerializeField] private LayerMask _enemyLayer;
-        [SerializeField] private Projectiles.ProjectilePool _projectilePool;
+        [SerializeField] private Color _gizmoRangeColor = new Color(0.2f, 0.8f, 1f, 0.25f);
+
+        private Projectiles.ProjectilePool _projectilePool;
 
         private readonly List<Enemy.EnemyHealth> _targets = new();
         private float _cooldownTimer;
         private CircleCollider2D _rangeTrigger;
+
+        [Inject]
+        public void Construct(Projectiles.ProjectilePool projectilePool)
+        {
+            _projectilePool = projectilePool;
+        }
 
         private void Awake()
         {
@@ -107,6 +116,13 @@ namespace Towers
             if (_rangeTrigger == null) _rangeTrigger = GetComponent<CircleCollider2D>();
             if (_rangeTrigger == null || _stats == null) return;
             _rangeTrigger.radius = _stats.Range;
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            if (_stats == null) return;
+            Gizmos.color = _gizmoRangeColor;
+            Gizmos.DrawWireSphere(transform.position, _stats.Range);
         }
     }
 }
