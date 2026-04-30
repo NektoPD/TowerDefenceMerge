@@ -24,6 +24,22 @@ namespace Waves
 
         [Min(0f)] public float timeBetweenWaves = 2f;
         public List<Wave> waves = new();
+
+        public int GetWaveEnemyCount(int waveIndex)
+        {
+            if (waves == null) return 0;
+            if (waveIndex < 0 || waveIndex >= waves.Count) return 0;
+            var wave = waves[waveIndex];
+            if (wave == null || wave.groups == null) return 0;
+
+            int total = 0;
+            foreach (var g in wave.groups)
+            {
+                if (g == null) continue;
+                total += Mathf.Max(0, g.count);
+            }
+            return total;
+        }
     }
 }
 

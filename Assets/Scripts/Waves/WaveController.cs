@@ -11,9 +11,19 @@ namespace Waves
         [SerializeField] private WaveConfig _config;
         [SerializeField] private bool _autoStart = true;
         [SerializeField] private WaypointHolder[] _lines;
+        [SerializeField] private bool _requireManualStartEachWave = true;
 
         private int _aliveInWave;
         private bool _waveSpawningDone;
+        private bool _continueRequested;
+        private int _currentWaveIndex = -1;
+
+        public int CurrentWaveIndex => _currentWaveIndex;
+        public int TotalWaves => _config != null && _config.waves != null ? _config.waves.Count : 0;
+        public WaveConfig Config => _config;
+
+        public event System.Action<int> WaveStarted;
+        public event System.Action<int> WaveCompleted;
 
         private void Start()
         {
@@ -34,11 +44,21 @@ namespace Waves
             for (int waveIndex = 0; waveIndex < _config.waves.Count; waveIndex++)
             {
                 var wave = _config.waves[waveIndex];
+                _currentWaveIndex = waveIndex;
                 _aliveInWave = 0;
                 _waveSpawningDone = false;
+                _continueRequested = !_requireManualStartEachWave;
 
-                if (wave.startDelay > 0f)
-                    yield return new WaitForSeconds(wave.startDelay);
+                if (_requireManualStartEachWave)
+                {
+                    // wait for UI (store) to call Continue()
+                    while (!_continueRequested)
+                        yield return null;
+                }
+
+                if (wave.startDelay > 0f) yield return new WaitForSeconds(wave.startDelay);
+
+                WaveStarted?.Invoke(waveIndex);
 
                 if (wave.groups != null)
                 {
@@ -53,6 +73,8 @@ namespace Waves
 
                 while (_aliveInWave > 0)
                     yield return null;
+
+                WaveCompleted?.Invoke(waveIndex);
 
                 if (_config.timeBetweenWaves > 0f && waveIndex < _config.waves.Count - 1)
                     yield return new WaitForSeconds(_config.timeBetweenWaves);
@@ -84,6 +106,11 @@ namespace Waves
         {
             mover.MoverRemoved -= OnMoverRemoved;
             _aliveInWave = Mathf.Max(0, _aliveInWave - 1);
+        }
+
+        public void Continue()
+        {
+            _continueRequested = true;
         }
     }
 }
