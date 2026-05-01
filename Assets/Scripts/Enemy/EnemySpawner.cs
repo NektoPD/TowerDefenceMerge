@@ -25,26 +25,47 @@ namespace Enemy
             }
         }
 
-        public WaypointMover GetFromPool()
+        public WaypointMover GetFromPool(EnemyStats stats = null)
         {
             if (_waypointMoversInPool.Any())
             {
                 var mover = _waypointMoversInPool.Dequeue();
                 mover.gameObject.SetActive(true);
-                if (mover.TryGetComponent(out EnemyHealth health)) health.ResetToFull();
+                ApplyStats(mover, stats);
                 mover.MoverRemoved += ReturnToPool;
                 _activeMovers.Add(mover);
-                Debug.Log("returning from pool");
                 return mover;
             }
 
             var newMover = Instantiate(_prefab, _parentPosition);
             newMover.gameObject.SetActive(true);
-            if (newMover.TryGetComponent(out EnemyHealth newHealth)) newHealth.ResetToFull();
+            ApplyStats(newMover, stats);
             newMover.MoverRemoved += ReturnToPool;
             _activeMovers.Add(newMover);
-            Debug.Log("returning new");
             return newMover;
+        }
+
+        private void ApplyStats(WaypointMover mover, EnemyStats stats)
+        {
+            if (mover == null) return;
+
+            if (stats != null)
+            {
+                mover.SetMoveSpeed(stats.MoveSpeed);
+
+                if (mover.TryGetComponent(out EnemyTarget target))
+                    target.ApplyStats(stats);
+
+                var health = mover.GetComponentInChildren<EnemyHealth>(true);
+                if (health != null)
+                    health.SetMaxHp(stats.MaxHp, fillToMax: true);
+            }
+            else
+            {
+                var health = mover.GetComponentInChildren<EnemyHealth>(true);
+                if (health != null)
+                    health.ResetToFull();
+            }
         }
 
         public void ReturnToPool(WaypointMover waypointMover)

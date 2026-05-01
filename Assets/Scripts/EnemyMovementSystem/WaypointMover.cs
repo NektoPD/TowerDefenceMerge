@@ -30,6 +30,11 @@ namespace EnemyMovementSystem
             _movementCoroutine = StartCoroutine(MoveToNextPoint(position));
         }
 
+        public void SetMoveSpeed(float speed)
+        {
+            _moveSpeed = Mathf.Max(0.01f, speed);
+        }
+
         public void OnReachedEnd()
         {
             StopCurrentMovement();

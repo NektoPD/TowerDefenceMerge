@@ -20,11 +20,12 @@ namespace Store
 
         [Header("Zone 1: Next wave preview")]
         [SerializeField] private TMP_Text _nextWaveText;
+        [SerializeField] private TMP_Text _enemyTypesText;
 
         [Header("Zone 2: Resources")]
-        [SerializeField] private TMP_Text _woodCount;
-        [SerializeField] private TMP_Text _metalCount;
-        [SerializeField] private TMP_Text _crystalCount;
+        [SerializeField] private TMP_Text _eyeCount;
+        [SerializeField] private TMP_Text _bookCount;
+        [SerializeField] private TMP_Text _voidCount;
         [SerializeField] private TMP_Text _mysteryCount;
 
         [Header("Zone 3: Controls")]
@@ -32,13 +33,13 @@ namespace Store
         [SerializeField] private TMP_Text _coinsText;
 
         [Header("Zone 2: Purchase buttons (placeholder)")]
-        [SerializeField] private Button _buyWood;
-        [SerializeField] private Button _buyMetal;
-        [SerializeField] private Button _buyCrystal;
+        [SerializeField] private Button _buyEye;
+        [SerializeField] private Button _buyBook;
+        [SerializeField] private Button _buyVoid;
         [SerializeField] private Button _buyMysteryX2;
-        [SerializeField, Min(0)] private int _costWood = 5;
-        [SerializeField, Min(0)] private int _costMetal = 5;
-        [SerializeField, Min(0)] private int _costCrystal = 5;
+        [SerializeField, Min(0)] private int _costEye = 5;
+        [SerializeField, Min(0)] private int _costBook = 5;
+        [SerializeField, Min(0)] private int _costVoid = 5;
         [SerializeField, Min(0)] private int _costMysteryX2 = 8;
 
         private System.Action<int> _coinsHandler;
@@ -53,12 +54,15 @@ namespace Store
 
         private void Awake()
         {
+            if (_waves == null) _waves = FindFirstObjectByType<WaveController>();
+            if (_popupRoot == null) _popupRoot = transform as RectTransform;
+
             if (_startWaveButton != null)
                 _startWaveButton.onClick.AddListener(OnStartWaveClicked);
 
-            if (_buyWood != null) _buyWood.onClick.AddListener(() => Buy(ResourceType.Wood, 1, _costWood));
-            if (_buyMetal != null) _buyMetal.onClick.AddListener(() => Buy(ResourceType.Metal, 1, _costMetal));
-            if (_buyCrystal != null) _buyCrystal.onClick.AddListener(() => Buy(ResourceType.Crystal, 1, _costCrystal));
+            if (_buyEye != null) _buyEye.onClick.AddListener(() => Buy(ResourceType.Eye, 1, _costEye));
+            if (_buyBook != null) _buyBook.onClick.AddListener(() => Buy(ResourceType.Book, 1, _costBook));
+            if (_buyVoid != null) _buyVoid.onClick.AddListener(() => Buy(ResourceType.Void, 1, _costVoid));
             if (_buyMysteryX2 != null) _buyMysteryX2.onClick.AddListener(BuyMysteryX2);
 
             if (_startHidden && _popupRoot != null)
@@ -69,6 +73,7 @@ namespace Store
 
         private void OnEnable()
         {
+            if (_waves == null) _waves = FindFirstObjectByType<WaveController>();
             if (_waves != null) _waves.WaveCompleted += OnWaveCompleted;
 
             _coinsHandler ??= _ => RefreshCoins();
@@ -89,6 +94,16 @@ namespace Store
         {
             Show();
             RefreshNextWavePreview();
+        }
+
+        private void Start()
+        {
+            // Show store/preview before wave 0 as well.
+            if (_waves != null && _waves.CurrentWaveIndex < 0)
+            {
+                Show();
+                RefreshNextWavePreview();
+            }
         }
 
         private void OnStartWaveClicked()
@@ -125,9 +140,9 @@ namespace Store
         private void RefreshResources()
         {
             if (_resources == null) return;
-            if (_woodCount != null) _woodCount.text = _resources.Get(ResourceType.Wood).ToString();
-            if (_metalCount != null) _metalCount.text = _resources.Get(ResourceType.Metal).ToString();
-            if (_crystalCount != null) _crystalCount.text = _resources.Get(ResourceType.Crystal).ToString();
+            if (_eyeCount != null) _eyeCount.text = _resources.Get(ResourceType.Eye).ToString();
+            if (_bookCount != null) _bookCount.text = _resources.Get(ResourceType.Book).ToString();
+            if (_voidCount != null) _voidCount.text = _resources.Get(ResourceType.Void).ToString();
             if (_mysteryCount != null) _mysteryCount.text = _resources.Get(ResourceType.Mystery).ToString();
         }
 
@@ -139,12 +154,26 @@ namespace Store
             if (_waves.TotalWaves == 0 || next >= _waves.TotalWaves)
             {
                 _nextWaveText.text = "Next wave: -";
+                if (_enemyTypesText != null) _enemyTypesText.text = "Enemies: -";
                 return;
             }
 
-            int count = _waves.Config != null ? _waves.Config.GetWaveEnemyCount(next) : 0;
-            string label = count <= 6 ? "low" : count <= 16 ? "medium" : "many";
-            _nextWaveText.text = $"Next wave: {label}";
+            bool hasFast, hasTank, hasPhase;
+            int count;
+            _waves.Config.GetWavePreview(next, out hasFast, out hasTank, out hasPhase, out count);
+
+            string qty = count <= 6 ? "Few" : "Many";
+            _nextWaveText.text = $"Next wave: {qty}";
+
+            if (_enemyTypesText != null)
+            {
+                string types = "";
+                if (hasFast) types += "🏃 Fast ";
+                if (hasTank) types += "🛡 Tank ";
+                if (hasPhase) types += "👻 Phase ";
+                if (string.IsNullOrWhiteSpace(types)) types = "-";
+                _enemyTypesText.text = $"Enemies: {types.Trim()}";
+            }
         }
 
         private void Buy(ResourceType type, int amount, int cost)
@@ -160,7 +189,7 @@ namespace Store
             if (!_wallet.TrySpend(_costMysteryX2)) return;
 
             var roll = Random.Range(0, 3); // unknown type
-            var type = roll == 0 ? ResourceType.Wood : roll == 1 ? ResourceType.Metal : ResourceType.Crystal;
+            var type = roll == 0 ? ResourceType.Eye : roll == 1 ? ResourceType.Book : ResourceType.Void;
             _resources.Add(type, 2);
             _resources.Add(ResourceType.Mystery, 1);
         }

@@ -64,6 +64,7 @@ namespace Towers
             if (hitbox == null) return;
             var target = hitbox.Target;
             if (target == null || target.Health == null) return;
+            if (_stats != null && !_stats.CanTargetPhaseEnemies && target.IsPhase) return;
             if (!_targets.Contains(target)) _targets.Add(target);
         }
 

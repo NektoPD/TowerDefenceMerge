@@ -6,7 +6,6 @@ namespace Economy
 {
     public class EnemyCoinReward : MonoBehaviour
     {
-        [SerializeField, Min(0)] private int _coinsOnKill = 1;
         [SerializeField] private EnemyTarget _target;
 
         [Header("UI fly text")]
@@ -42,8 +41,11 @@ namespace Economy
 
         private void OnDied(EnemyHealth health)
         {
-            if (_coinsOnKill <= 0) return;
-            _wallet?.AddCoins(_coinsOnKill);
+            int reward = 1;
+            if (_target != null && _target.Stats != null) reward = _target.Stats.CoinsOnKill;
+            if (reward <= 0) return;
+
+            _wallet?.AddCoins(reward);
 
             var targetUI = _coinCounterTarget != null ? _coinCounterTarget.Target : null;
             if (_uiCanvas == null || _flyTextInstance == null || targetUI == null) return;
@@ -53,7 +55,7 @@ namespace Economy
 
             _flyTextInstance.transform.SetParent(_uiCanvas.transform, worldPositionStays: true);
             _flyTextInstance.gameObject.SetActive(true);
-            _flyTextInstance.Play(_coinsOnKill, screenPos, targetUI);
+            _flyTextInstance.Play(reward, screenPos, targetUI);
         }
     }
 }

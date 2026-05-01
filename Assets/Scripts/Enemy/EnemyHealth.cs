@@ -34,6 +34,12 @@ namespace Enemy
             _health.SetMax(_maxHp, fillToMax: true);
         }
 
+        public void SetMaxHp(float maxHp, bool fillToMax = true)
+        {
+            _maxHp = Mathf.Max(1f, maxHp);
+            _health.SetMax(_maxHp, fillToMax);
+        }
+
         public void TakeDamage(float amount)
         {
             var before = _health.Current;

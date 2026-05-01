@@ -4,26 +4,26 @@ namespace Economy
 {
     public class ResourceInventory
     {
-        private int _wood;
-        private int _metal;
-        private int _crystal;
+        private int _eye;
+        private int _book;
+        private int _void;
         private int _mystery;
 
         public event Action<ResourceType, int> ResourceChanged;
 
-        public ResourceInventory(int wood = 0, int metal = 0, int crystal = 0, int mystery = 0)
+        public ResourceInventory(int eye = 0, int book = 0, int @void = 0, int mystery = 0)
         {
-            _wood = Math.Max(0, wood);
-            _metal = Math.Max(0, metal);
-            _crystal = Math.Max(0, crystal);
+            _eye = Math.Max(0, eye);
+            _book = Math.Max(0, book);
+            _void = Math.Max(0, @void);
             _mystery = Math.Max(0, mystery);
         }
 
         public int Get(ResourceType type) => type switch
         {
-            ResourceType.Wood => _wood,
-            ResourceType.Metal => _metal,
-            ResourceType.Crystal => _crystal,
+            ResourceType.Eye => _eye,
+            ResourceType.Book => _book,
+            ResourceType.Void => _void,
             ResourceType.Mystery => _mystery,
             _ => 0
         };
@@ -34,9 +34,9 @@ namespace Economy
 
             switch (type)
             {
-                case ResourceType.Wood: _wood += amount; break;
-                case ResourceType.Metal: _metal += amount; break;
-                case ResourceType.Crystal: _crystal += amount; break;
+                case ResourceType.Eye: _eye += amount; break;
+                case ResourceType.Book: _book += amount; break;
+                case ResourceType.Void: _void += amount; break;
                 case ResourceType.Mystery: _mystery += amount; break;
             }
 

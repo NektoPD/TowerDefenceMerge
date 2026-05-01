@@ -16,6 +16,15 @@ MonoBehaviour:
   waves:
   - startDelay: 0
     groups:
-    - line: {fileID: 0}
+    - enemy: {fileID: 11400000, guid: 58b114b2328f3a84dbb6424965687803, type: 2}
+      lineIndex: 0
       count: 3
+      spawnInterval: 5
+    - enemy: {fileID: 11400000, guid: 5047839acd0048644a38a0d126a75068, type: 2}
+      lineIndex: 0
+      count: 2
+      spawnInterval: 5
+    - enemy: {fileID: 11400000, guid: da343b8394df1e44ebc5810ff254b2dc, type: 2}
+      lineIndex: 0
+      count: 1
       spawnInterval: 5

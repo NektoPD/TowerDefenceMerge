@@ -47,6 +47,7 @@ namespace Waves
                 _currentWaveIndex = waveIndex;
                 _aliveInWave = 0;
                 _waveSpawningDone = false;
+                // If manual start is enabled, store/UI must call Continue() before every wave (including wave 0).
                 _continueRequested = !_requireManualStartEachWave;
 
                 if (_requireManualStartEachWave)
@@ -90,7 +91,7 @@ namespace Waves
 
             for (int i = 0; i < group.count; i++)
             {
-                var mover = _spawner.GetFromPool();
+                var mover = _spawner.GetFromPool(group.enemy);
                 _aliveInWave++;
                 mover.MoverRemoved += OnMoverRemoved;
                 line.SetNewMover(mover);
